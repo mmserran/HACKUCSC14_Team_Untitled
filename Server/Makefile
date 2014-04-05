@@ -17,5 +17,6 @@ all: clean compile run
 
 gitadd: main.cpp Makefile
 	git add main.cpp
+	git add zmq.hpp
 	git add Makefile
 	git commit
