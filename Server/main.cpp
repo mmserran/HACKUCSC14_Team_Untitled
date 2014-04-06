@@ -1,7 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
-#include <cstring>
+//#include <cstring>
 #include "SFML/Network.hpp"
 
 
@@ -14,21 +14,23 @@ std::string receiMsg = "Thanks for your data!";
 
 sf::Mutex mutex;
 
+std::string last_ping = "";
 
 
-class fivelet{
+
+/*class fivelet{
    public:
    double lati;
    double longi;
-   std::string* route;
+   int route;
    long uptime;
    char dir;
-   fivelet(double a, double b, std::string c, long d, char e);
+   fivelet(double a, double b, int c, long d, char e);
    ~fivelet();
 };
 
-fivelet::fivelet(double a, double b, std::string c, long d, char e)
-:lati(a), longi(b),uptime(d), dir(e)
+fivelet::fivelet(double a, double b, int c, long d, char e)
+:lati(a), longi(b), route(c), uptime(d), dir(e)
 {
    std::cout << "Making new Fivelet!" << std::endl;
    std::cout << a << std::endl;
@@ -37,7 +39,6 @@ fivelet::fivelet(double a, double b, std::string c, long d, char e)
    std::cout << d << std::endl;
    std::cout << e << std::endl;
    std::cout.flush();
-   route = new std::string(c.c_str());
 };
 
 fivelet::~fivelet()
@@ -47,33 +48,46 @@ fivelet::~fivelet()
    std::cout << "Deleting old Fivelet!" << std::endl;
    std::cout << lati   << std::endl;
    std::cout << longi  << std::endl;
-   std::cout << *route << std::endl;
+   std::cout << route << std::endl;
    std::cout << uptime << std::endl;
    std::cout << dir    << std::endl;
    std::cout.flush();
-   delete route;
 };
+*/
+
+std::vector<std::vector<std::string>> queues(0);
 
 
-std::unordered_map<std::string, std::vector<fivelet*>> queues(0);
-
-
-void addToDatabase(double lati, double longi, std::string route, long uptime, char direction)
+void addToDatabase(int route, std::string dataSet)
 {
    mutex.lock();
-   fivelet* node = new fivelet(lati, longi, route, uptime, direction);
-   queues[route].push_back(node);
+   queues[route].push_back(dataSet);
    while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME */)
    {
-      queues[route].pop_front();
+      queues[route].erase(queues[route].begin());
    }
    mutex.unlock();
 }
 
-std::vector<fivelet*> retrieveFromDatabase(std::string route)
+/*void addToDatabase(double lati, double longi, int route, long uptime, char direction)
 {
    mutex.lock();
-   if(!(route.compare("all")))
+   fivelet node(lati, longi, route, uptime, direction);
+   queues[route].push_back(node);
+   while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME )
+   {
+      queues[route].erase(queues[route].begin());
+   }
+   mutex.unlock();
+}*/
+
+
+
+
+std::vector<std::string> retrieveFromDatabase(int route)
+{
+   mutex.lock();
+   if(route == 0)//all routes
    {
       //Run retrieveFromDataBase recursively for each route
       //combine vectors
@@ -85,29 +99,61 @@ std::vector<fivelet*> retrieveFromDatabase(std::string route)
    {
       while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME */)
       {
-         queues[route].pop_front();
+         queues[route].erase(queues[route].begin());
       }
       if(!queues[route].empty())
       {
-         std::vector<fivelet*> returnVector;
-         auto q_iter = queues[route].begin();
+         std::vector<std::string> returnlist(0);
+         //auto q_iter = queues[route].begin();
          
-         for(auto q_iter: queues[route])
+         for(auto q_iter = queues[route].begin(); q_iter !=  queues[route].end(); q_iter++)
          {
             std::cout << "Adding item to return vector" << std::endl;
-            returnVector.push_back(q_iter);
+            returnlist.push_back(*q_iter);
          }
-         return returnVector;
+         return returnlist;
       }
    }
    mutex.unlock();
 }
 
+/*std::vector<fivelet> retrieveFromDatabase(int route)
+{
+   mutex.lock();
+   if(route == 0)//all routes
+   {
+      //Run retrieveFromDataBase recursively for each route
+      //combine vectors
+      //AB.reserve( A.size() + B.size() ); // preallocate memory
+      //AB.insert( AB.end(), A.begin(), A.end() );
+      //AB.insert( AB.end(), B.begin(), B.end() );
+   }
+   else
+   {
+      while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME )
+      {
+         queues[route].erase(queues[route].begin());
+      }
+      if(!queues[route].empty())
+      {
+         std::vector<fivelet> returnlist;
+         auto q_iter = queues[route].begin();
+         
+         for(auto q_iter: queues[route])
+         {
+            std::cout << "Adding item to return vector" << std::endl;
+            returnlist.push_back(q_iter);
+         }
+         return returnlist;
+      }
+   }
+   mutex.unlock();
+}*/
+
 
 
 void clientCommThread(sf::TcpSocket* newClient)
 {
-   addToDatabase(1, 2, "don'tcrash", 0, 'D');
    std::cout << "SPAWNING THREAD!";
    std::cout.flush();
    std::size_t maxData = sizeof(char)*100;
@@ -131,6 +177,7 @@ void clientCommThread(sf::TcpSocket* newClient)
          bool requestingPings = (messageString[0] == 'G');
          
          std::string rest = messageString.substr(1);
+         std::string dataSet = rest;
          if(!requestingPings)
          {
             std::string data[5];
@@ -150,10 +197,11 @@ void clientCommThread(sf::TcpSocket* newClient)
                   std::cout << "Part " << i << ": "<<data[i] << std::endl;
                }
             }
+            std::cout << "String has enough parts." <<std::endl;
             
             double lati;
             double longi;
-            std::string route;
+            int route;
             long upTime;
             char direction;
             
@@ -163,7 +211,7 @@ void clientCommThread(sf::TcpSocket* newClient)
                {
                   lati = std::stod(data[0]);
                   longi = std::stod(data[1]);
-                  route = data[2];
+                  route = std::stoi(data[2]);
                   upTime = std::stol(data[3]);
                   direction = data[4][0];
                }
@@ -179,11 +227,18 @@ void clientCommThread(sf::TcpSocket* newClient)
                //std::cout << "Time"     << ": " << upTime    << std::endl;
                //std::cout << "Direction"<< ": " << direction << std::endl;
             }
+            
+            std::cout << "String has been parsed." <<std::endl;
             if(goodString)
             {
                
-               addToDatabase(lati, longi, route, upTime, direction);
+               std::cout << "String was good." <<std::endl;
                
+               //addToDatabase(route, dataSet);
+               std::cout << "Added to database." <<std::endl;
+               mutex.lock();
+               last_ping = dataSet;
+               mutex.unlock();
                
                std::cout << "Sending GOOD REPLY" << std::endl;
                std::cout.flush();
@@ -198,12 +253,35 @@ void clientCommThread(sf::TcpSocket* newClient)
          }
          else //"REQUESTING PINGS
          {
+            int route;
+            try
+            {
+               route = std::stoi(rest);
+            }
+            catch(...)
+            {
+               //bad string
+               std::cout << "Error_Reply3: String:" << messageString << std::endl;
+               std::cout.flush();
+               newClient->send (errorMsg.c_str(), errorMsg.size());
+               continue;
+            }
             std::cout << "Client is requesting pings." <<std::endl;
-            std::vector<fivelet*> pingData = retrieveFromDatabase(rest);
+            //std::vector<std::string> pingData = retrieveFromDatabase(route);
             //send many pings back
             std::cout << "Sending GOOD REPLY" << std::endl;
             std::cout.flush();
-            newClient->send (receiMsg.c_str(), receiMsg.size());
+            if(last_ping.empty())
+            {
+               std::cout << "Empty." << std::endl;
+               newClient->send (errorMsg.c_str(), errorMsg.size());
+            }
+            else
+            {
+               std::cout << "Full. \"" << last_ping << "\"" << std::endl;
+               newClient->send (last_ping.c_str(), last_ping.size());
+            }
+               
             std::cout << "Reply sent successfully." << std::endl;
          }
       }
@@ -264,6 +342,7 @@ int main()
       sf::Thread* thread_ptr = new sf::Thread(&clientCommThread, client);
       threads.push_back(thread_ptr);
       thread_ptr->launch();
+      //clientCommThread(client);
       std::cout.flush();
    }
    return 0;
