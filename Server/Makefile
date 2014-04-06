@@ -11,7 +11,7 @@ output = ./Server
 default: compile
 
 compile: ./main.o
-	g++ -Wall -Wextra -std=c++11 -o Server main.cpp -L$(libpath) $(libs)
+	g++ -Wall -Wextra -std=c++11 -o Server main.o -L$(libpath) $(libs)
  
 %.o: %.cpp
 	g++ -c -std=c++11 $< -I$(incpath)

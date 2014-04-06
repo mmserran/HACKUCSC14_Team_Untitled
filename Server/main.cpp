@@ -3,6 +3,7 @@
 //#include "zmq.hpp"
 #include <unordered_map>
 #include <queue>
+#include "SFML/Network.hpp"
 
 
 
@@ -34,6 +35,7 @@ void addToDatabase(double lati, double longi, std::string route, long uptime, ch
 int main()
 {
    std::cout << "hi" << std::endl;
+   sf::TcpListener listener;
    //Say hi
    //zmq::context_t context (1);
    //zmq::socket_t socket (context, ZMQ_DEALER);
