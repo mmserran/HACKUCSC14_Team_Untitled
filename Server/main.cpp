@@ -9,6 +9,7 @@ const long MAX_TIME = 30;//minutes
 const unsigned MAX_PINGS = 10;//minutes
 
 std::string errorMsg = "Error";
+std::string receiMsg = "Thanks for your data!";
 
 
 
@@ -82,8 +83,9 @@ int main()
       
       
       
-      while(client->receive(dataA, maxData, received) != sf::Socket::Disconnected){
-         std::cout << "Received Data!";
+      while(client->receive(dataA, maxData, received) != sf::Socket::Disconnected)
+      {
+         std::cout << "Received Data! " << received << " # of bytes!" << std::endl;
          std::cout.flush();
          //zmq::message_t message;
          //socket.recv (&message);
@@ -148,15 +150,19 @@ int main()
             {
                if(!requestingPings)
                {
-                  addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
+                  //addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
                   
                   
-                  std::cout << "Sending REPLY3" << std::endl;
-                  client->send (errorMsg.c_str(), errorMsg.size());
+                  std::cout << "Sending GOOD REPLY" << std::endl;
+                  std::cout.flush();
+                  client->send (receiMsg.c_str(), receiMsg.size());
                }
                else
                {
                   //send many pings back
+                  std::cout << "Sending GOOD REPLY" << std::endl;
+                  std::cout.flush();
+                  client->send (receiMsg.c_str(), receiMsg.size());
                }
             }
             if(!goodString)
