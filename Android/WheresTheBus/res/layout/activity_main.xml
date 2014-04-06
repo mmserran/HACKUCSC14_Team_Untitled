@@ -35,6 +35,7 @@
             android:id="@+id/uploadBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+	        android:onClick="onClick"
             android:layout_weight="2"
             android:text="Upload Coords" />
         
