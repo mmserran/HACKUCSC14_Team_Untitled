@@ -12,7 +12,18 @@ int main()
    while(true)
    {
       zmq::message_t message;
-      socket.recv (&request);
+      socket.recv (&message);
+      std::string messageString = std::string(static_cast<char*>(message.data())) + '\0';
+      std::cout << "received data!"<<std::endl;
+      std::cout << messageString << std::endl;
+      
+      
+      
+      
+      zmq::message_t reply (50);
+      memcpy ((void *) reply.data (), "HWORLD DUDE", 40);
+      std::cout << "Sending REPLY" << std::endl;
+      socket.send (reply);
       //Wait for new connection
       //spin new connection in its own thread
    }
