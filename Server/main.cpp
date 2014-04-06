@@ -8,6 +8,8 @@
 const long MAX_TIME = 30;//minutes
 const unsigned MAX_PINGS = 10;//minutes
 
+std::string errorMsg = "Error";
+
 
 
 class fourlet{
@@ -68,109 +70,111 @@ int main()
          std::cout.flush();
          //some kind of error
          delete client;
-          continue;
+         continue;
       }
       std::cout << "Got good client!";
       std::cout.flush();
       sf::Packet dataPack;
-      client->receive(dataPack);
-      std::cout << "Received Data!";
-      std::cout.flush();
-      //zmq::message_t message;
-      //socket.recv (&message);
-      std::string messageString = std::string(static_cast<const char*>(dataPack.getData())) + '\0';
-      std::cout << "received data!"<<std::endl;
-      std::cout << messageString << std::endl;
       
-      if(messageString[0] == 'G' || messageString[0] == 'S')
-      {
-         bool requestingPings = (messageString[0] == 'G');
+      std::size_t maxData = sizeof(char)*100;
+      void* dataA = malloc(maxData);
+      std::size_t received;
+      
+      
+      
+      while(client->receive(dataA, maxData, received) != sf::Socket::Disconnected){
+         std::cout << "Received Data!";
+         std::cout.flush();
+         //zmq::message_t message;
+         //socket.recv (&message);
+         std::string messageString = std::string(static_cast<const char*>(dataA)) + '\0';
+         std::cout << "received data!"<<std::endl;
+         std::cout << messageString << std::endl;
          
-         std::string rest = messageString;
-         std::string data[5];
-         
-         bool goodString = true;
-         for(int i = 0; i < 5; i++)
+         if(messageString[0] == 'G' || messageString[0] == 'S')
          {
-            size_t delimLocation = rest.find('*');
-            if(delimLocation == std::string::npos) //no delim found
+            bool requestingPings = (messageString[0] == 'G');
+            
+            std::string rest = messageString.substr(1);
+            std::string data[5];
+            
+            bool goodString = true;
+            for(int i = 0; i < 5; i++)
             {
-               goodString = false;
-            }
-            else
-            {
-               data[i] = rest.substr(0, delimLocation); //sets data[i] from begin
-               // to next '*' character
-               rest = rest.substr(delimLocation+1); //sets rest to everything after
-               //the first '*'
-               std::cout << "Part " << i << ": "<<data[i] << std::endl;
-            }
-         }
-         
-         double lati;
-         double longi;
-         std::string route;
-         long upTime;
-         char direction;
-         
-         if(goodString)
-         {
-            try
-            {
-               lati = std::stod(data[0]);
-               longi = std::stod(data[1]);
-               route = data[2];
-               upTime = std::stol(data[3]);
-               direction = data[4][0];
-            }
-            catch(...)
-            {
-               std::cout << "Improperly formatted data. Throwing away string!"<<std::endl;
-               goodString = false;
+               size_t delimLocation = rest.find('*');
+               if(delimLocation == std::string::npos) //no delim found
+               {
+                  goodString = false;
+               }
+               else
+               {
+                  data[i] = rest.substr(0, delimLocation); //sets data[i] from begin
+                  // to next '*' character
+                  rest = rest.substr(delimLocation+1); //sets rest to everything after
+                  //the first '*'
+                  std::cout << "Part " << i << ": "<<data[i] << std::endl;
+               }
             }
             
-            //std::cout << "Lati"     << ": " << lati      << std::endl;
-            //std::cout << "Longi "   << ": " << longi     << std::endl;
-            //std::cout << "Route"    << ": " << route     << std::endl;
-            //std::cout << "Time"     << ": " << upTime    << std::endl;
-            //std::cout << "Direction"<< ": " << direction << std::endl;
-         }
-         if(goodString)
-         {
-            if(!requestingPings)
+            double lati;
+            double longi;
+            std::string route;
+            long upTime;
+            char direction;
+            
+            if(goodString)
             {
-               addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
+               try
+               {
+                  lati = std::stod(data[0]);
+                  longi = std::stod(data[1]);
+                  route = data[2];
+                  upTime = std::stol(data[3]);
+                  direction = data[4][0];
+               }
+               catch(...)
+               {
+                  std::cout << "Improperly formatted data. Throwing away string!"<<std::endl;
+                  goodString = false;
+               }
                
-               
-               //zmq::message_t reply (13);
-               //memcpy ((void *) reply.data (), "Data Received", 13);
-               std::cout << "Sending REPLY" << std::endl;
-               //socket.send (reply);
+               //std::cout << "Lati"     << ": " << lati      << std::endl;
+               //std::cout << "Longi "   << ": " << longi     << std::endl;
+               //std::cout << "Route"    << ": " << route     << std::endl;
+               //std::cout << "Time"     << ": " << upTime    << std::endl;
+               //std::cout << "Direction"<< ": " << direction << std::endl;
             }
-            else
+            if(goodString)
             {
-               //send many pings back
+               if(!requestingPings)
+               {
+                  addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
+                  
+                  
+                  std::cout << "Sending REPLY3" << std::endl;
+                  client->send (errorMsg.c_str(), errorMsg.size());
+               }
+               else
+               {
+                  //send many pings back
+               }
+            }
+            if(!goodString)
+            {
+               //Bad in string
+               std::cout << "Error_Reply2" << std::endl;
+               client->send (errorMsg.c_str(), errorMsg.size());
             }
          }
-         if(!goodString)
+         else //Not G or S
          {
             //Bad in string
-            //zmq::message_t Error_Reply (50);
-            //memcpy ((void *) Error_Reply.data (), "Bad String", 40);
-            std::cout << "Error_Reply" << std::endl;
-            //socket.send (Error_Reply);
+            std::cout << "Error_Reply1" << std::endl;
+            client->send (errorMsg.c_str(), errorMsg.size());
          }
+         //Wait for new connection
+         //spin new connection in its own thread
       }
-      else //Not G or S
-      {
-         //Bad in string
-         //zmq::message_t Error_Reply (50);
-         //memcpy ((void *) Error_Reply.data (), "Bad String", 40);
-         std::cout << "Error_Reply" << std::endl;
-         //socket.send (Error_Reply);
-      }
-      //Wait for new connection
-      //spin new connection in its own thread
       delete client;
    }
    return 0;
