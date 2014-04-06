@@ -27,11 +27,11 @@ std::string last_ping = "";
    char dir;
    fivelet(double a, double b, int c, long d, char e);
    ~fivelet();
-};
-
-fivelet::fivelet(double a, double b, int c, long d, char e)
-:lati(a), longi(b), route(c), uptime(d), dir(e)
-{
+   };
+   
+   fivelet::fivelet(double a, double b, int c, long d, char e)
+   :lati(a), longi(b), route(c), uptime(d), dir(e)
+   {
    std::cout << "Making new Fivelet!" << std::endl;
    std::cout << a << std::endl;
    std::cout << b << std::endl;
@@ -39,10 +39,10 @@ fivelet::fivelet(double a, double b, int c, long d, char e)
    std::cout << d << std::endl;
    std::cout << e << std::endl;
    std::cout.flush();
-};
-
-fivelet::~fivelet()
-{
+   };
+   
+   fivelet::~fivelet()
+   {
    //empty deconstructor
    
    std::cout << "Deleting old Fivelet!" << std::endl;
@@ -52,10 +52,10 @@ fivelet::~fivelet()
    std::cout << uptime << std::endl;
    std::cout << dir    << std::endl;
    std::cout.flush();
-};
+   };
 */
 
-std::vector<std::vector<std::string>> queues(0);
+std::vector<std::vector<std::string>> queues(20);
 
 
 void addToDatabase(int route, std::string dataSet)
@@ -70,13 +70,13 @@ void addToDatabase(int route, std::string dataSet)
 }
 
 /*void addToDatabase(double lati, double longi, int route, long uptime, char direction)
-{
+   {
    mutex.lock();
    fivelet node(lati, longi, route, uptime, direction);
    queues[route].push_back(node);
    while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME )
    {
-      queues[route].erase(queues[route].begin());
+   queues[route].erase(queues[route].begin());
    }
    mutex.unlock();
 }*/
@@ -87,65 +87,72 @@ void addToDatabase(int route, std::string dataSet)
 std::vector<std::string> retrieveFromDatabase(int route)
 {
    mutex.lock();
-   if(route == 0)//all routes
+   std::vector<std::string> returnlist(0);
+   try
    {
-      //Run retrieveFromDataBase recursively for each route
-      //combine vectors
-      //AB.reserve( A.size() + B.size() ); // preallocate memory
-      //AB.insert( AB.end(), A.begin(), A.end() );
-      //AB.insert( AB.end(), B.begin(), B.end() );
-   }
-   else
-   {
-      while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME */)
+      if(route == 0)//all routes
       {
-         queues[route].erase(queues[route].begin());
+         //Run retrieveFromDataBase recursively for each route
+         //combine vectors
+         //AB.reserve( A.size() + B.size() ); // preallocate memory
+         //AB.insert( AB.end(), A.begin(), A.end() );
+         //AB.insert( AB.end(), B.begin(), B.end() );
       }
-      if(!queues[route].empty())
+      else
       {
-         std::vector<std::string> returnlist(0);
-         //auto q_iter = queues[route].begin();
-         
-         for(auto q_iter = queues[route].begin(); q_iter !=  queues[route].end(); q_iter++)
+         while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME */)
          {
-            std::cout << "Adding item to return vector" << std::endl;
-            returnlist.push_back(*q_iter);
+            queues[route].erase(queues[route].begin());
          }
-         return returnlist;
+         if(!queues[route].empty())
+         {
+            //auto q_iter = queues[route].begin();
+            
+            for(auto q_iter = queues[route].begin(); q_iter !=  queues[route].end(); q_iter++)
+            {
+               std::cout << "Adding item to return vector" << std::endl;
+               returnlist.push_back(*q_iter);
+            }
+         }
       }
+   }
+   catch(...)
+   {
+      //do nothing
    }
    mutex.unlock();
+   return returnlist;
 }
 
 /*std::vector<fivelet> retrieveFromDatabase(int route)
-{
+   {
    mutex.lock();
    if(route == 0)//all routes
    {
-      //Run retrieveFromDataBase recursively for each route
-      //combine vectors
-      //AB.reserve( A.size() + B.size() ); // preallocate memory
-      //AB.insert( AB.end(), A.begin(), A.end() );
-      //AB.insert( AB.end(), B.begin(), B.end() );
+   //Run retrieveFromDataBase recursively for each route
+   //combine vectors
+   //AB.reserve( A.size() + B.size() ); // preallocate memory
+   //AB.insert( AB.end(), A.begin(), A.end() );
+   //AB.insert( AB.end(), B.begin(), B.end() );
    }
    else
    {
-      while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME )
-      {
-         queues[route].erase(queues[route].begin());
-      }
-      if(!queues[route].empty())
-      {
-         std::vector<fivelet> returnlist;
-         auto q_iter = queues[route].begin();
-         
-         for(auto q_iter: queues[route])
-         {
-            std::cout << "Adding item to return vector" << std::endl;
-            returnlist.push_back(q_iter);
-         }
-         return returnlist;
-      }
+   while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME )
+   {
+   queues[route].erase(queues[route].begin());
+   }
+   if(!queues[route].empty())
+   {
+   std::vector<fivelet> returnlist;
+   auto q_iter = queues[route].begin();
+   
+   for(auto q_iter: queues[route])
+   {
+   std::cout << "Adding item to return vector" << std::endl;
+   returnlist.push_back(q_iter);
+   }
+   return returnlist;
+   }
    }
    mutex.unlock();
 }*/
@@ -154,6 +161,7 @@ std::vector<std::string> retrieveFromDatabase(int route)
 
 void clientCommThread(sf::TcpSocket* newClient)
 {
+   newClient->setBlocking(true);
    std::cout << "SPAWNING THREAD!";
    std::cout.flush();
    std::size_t maxData = sizeof(char)*100;
@@ -234,7 +242,7 @@ void clientCommThread(sf::TcpSocket* newClient)
                
                std::cout << "String was good." <<std::endl;
                
-               //addToDatabase(route, dataSet);
+               addToDatabase(route, dataSet);
                std::cout << "Added to database." <<std::endl;
                mutex.lock();
                last_ping = dataSet;
@@ -267,23 +275,34 @@ void clientCommThread(sf::TcpSocket* newClient)
                continue;
             }
             std::cout << "Client is requesting pings." <<std::endl;
-            //std::vector<std::string> pingData = retrieveFromDatabase(route);
+            std::vector<std::string> pingData = retrieveFromDatabase(route);
             //send many pings back
             std::cout << "Sending GOOD REPLY" << std::endl;
             std::cout.flush();
-            if(last_ping.empty())
+            
+            if(pingData.empty())
             {
                std::cout << "Empty." << std::endl;
                newClient->send (errorMsg.c_str(), errorMsg.size());
             }
             else
             {
-               std::cout << "Full. \"" << last_ping << "\"" << std::endl;
-               newClient->send (last_ping.c_str(), last_ping.size());
+               std::string send_str = "@";
+               send_str += pingData[0].data();
+               for(int i = 1; i <  pingData.size(); i++)
+               {
+                  send_str += '$';
+                  send_str += pingData[i].data();
+               }
+               send_str += "@";
+               std::cout << "Sending: \"" << send_str << "\"" << std::endl;
+               std::cout.flush();
+               newClient->send (send_str.c_str(), send_str.size());
             }
-               
-            std::cout << "Reply sent successfully." << std::endl;
          }
+         
+         
+         std::cout << "Reply sent successfully." << std::endl;
       }
       else //Not G or S
       {
@@ -346,4 +365,4 @@ int main()
       std::cout.flush();
    }
    return 0;
-}
+   }      
