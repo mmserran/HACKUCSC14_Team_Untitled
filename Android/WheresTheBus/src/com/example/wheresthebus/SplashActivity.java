@@ -4,6 +4,7 @@ package com.example.wheresthebus;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.Menu;
@@ -18,11 +19,13 @@ public class SplashActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_splash);
 		
-
 		TextView splashTitle = (TextView) findViewById(R.id.splashTitle);
-		splashTitle.setTextSize(36);
+		splashTitle.setTextColor(Color.WHITE);
+		splashTitle.setTypeface(null, Typeface.BOLD);
+		splashTitle.setTextSize(42);
 		splashTitle.setGravity(Gravity.CENTER);
 		
+
 		// Initiate the Map Button
 		Button mapBtn = (Button) findViewById(R.id.mapBtn);
 		mapBtn.setTextColor(Color.WHITE);

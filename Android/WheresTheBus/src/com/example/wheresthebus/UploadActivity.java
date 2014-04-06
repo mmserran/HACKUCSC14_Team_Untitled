@@ -12,6 +12,7 @@ import java.util.Calendar;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
@@ -70,13 +71,23 @@ public class UploadActivity extends Activity {
 		setContentView(R.layout.activity_upload);
 
 		new Thread(new ClientThread()).start();
+
+		TextView routeTitle = (TextView) findViewById(R.id.busRouteTitle);
+		TextView directionTitle = (TextView) findViewById(R.id.directionTitle);
+		
+		routeTitle.setTextColor(Color.WHITE);
+		routeTitle.setTextSize(16);
+		directionTitle.setTextColor(Color.WHITE);
+		directionTitle.setTextSize(16);
 		
 		TextView title = (TextView) findViewById(R.id.uploadTitle);
+		title.setTypeface(null, Typeface.BOLD);
+		title.setTextColor(Color.WHITE);
 		title.setGravity(Gravity.CENTER);
 		title.setTextSize(36);
 		
 		// Create String arrays
-		routesList = getResources().getStringArray(R.array.routes);
+		routesList = getResources().getStringArray(R.array.routesOut);
 		directionList = getResources().getStringArray(R.array.directions);
 		
 		// Create an ArrayAdapter using default spinner layout
@@ -121,13 +132,14 @@ public class UploadActivity extends Activity {
 				Spinner busSpinner = (Spinner)findViewById(R.id.busRouteSpinner);
 				Spinner dirSpinner = (Spinner)findViewById(R.id.directionSpinner);
 				
-				String route = busSpinner.getSelectedItem().toString();
+				int route = busSpinner.getSelectedItemPosition();
 				String direction = dirSpinner.getSelectedItem().toString();
+				char dirSignal = direction==directionList[0] ? 'S' : 'D';
 						
 				Calendar c = Calendar.getInstance(); 
 				int time = c.get(Calendar.SECOND);
 				
-				String outStr = createOutString(latty, longy, route, time, direction);
+				String outStr = createOutString(latty, longy, route, time, dirSignal);
 				uploadBtn.setText(outStr);
 				
 				// Send data to server
@@ -305,15 +317,18 @@ public class UploadActivity extends Activity {
 	 
 	}
 	
-	/** Returns an output string acceptd by our C server
+	/** Returns an output string accepted by our C server
 	 *
 	 */
 	private String createOutString(double latty, double longy, 
-									String route, double time, String direction) {
+									int route, double time, char direction) {
 		
-		// "SDOUBLE*DOUBLE*STRING*DOUBLE*STRING
+		// "SDOUBLE*DOUBLE*STRING*DOUBLE*D/S*
 		String outStr = "S" + Double.toString(latty) + "*" + Double.toString(longy)
-						+ "*" + Double.toString(time) + "*" + direction + "*";
+						+ "*" + route + "*" + Double.toString(time) + "*" 
+						+ direction + "*";
+		
+		//outStr = 'S' + Double.toString(latty) + "*" + Double.toString(longy);
 		
 		return outStr;
 	}

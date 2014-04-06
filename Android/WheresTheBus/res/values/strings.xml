@@ -9,11 +9,11 @@
     <string name="bus_route_title">Bus Route:</string>
     <string name="direction_title">Direction:</string>
     <string-array name="directions">
-        <item>To Science Hill</item>
-        <item>Away from Science Hill</item>
+        <item>Toward Science Hill</item>
+        <item>Toward Downtown</item>
     </string-array>
     <string name="title_activity_map">MapActivity</string>
-    <string-array name="routes">
+    <string-array name="routesOut">
         <item>Loop</item>
         <item>Upper Campus</item>
         <item>East Night</item>
@@ -22,6 +22,7 @@
         <item>12</item>
         <item>15</item>
         <item>16</item>
+        <item>17</item>
         <item>19</item>
         <item>20</item>
         <item>20D</item>
