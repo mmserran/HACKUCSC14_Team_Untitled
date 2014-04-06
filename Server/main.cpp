@@ -1,6 +1,4 @@
 #include <iostream>
-//#include <zmq.h>
-//#include "zmq.hpp"
 #include <unordered_map>
 #include <queue>
 #include "SFML/Network.hpp"
@@ -9,6 +7,9 @@
 
 const long MAX_TIME = 30;//minutes
 const unsigned MAX_PINGS = 10;//minutes
+
+
+
 class fourlet{
    public:
    double lati;
@@ -32,10 +33,20 @@ void addToDatabase(double lati, double longi, std::string route, long uptime, ch
    }
 }
 
+
+
+
+
+/**********MAIN**********/
 int main()
 {
    std::cout << "hi" << std::endl;
    sf::TcpListener listener;
+   if (listener.listen(5867) != sf::Socket::Done)
+   {
+      std::cout << "Could not listen on port 5867. "<<std::endl;
+      return 1;
+   }
    //Say hi
    //zmq::context_t context (1);
    //zmq::socket_t socket (context, ZMQ_DEALER);
@@ -46,9 +57,28 @@ int main()
    
    while(true)
    {
+      std::cout << "Entering loop thing";
+      std::cout.flush();
+      sf::TcpSocket* client = new sf::TcpSocket;
+      std::cout << "Waiting on new client...";
+      std::cout.flush();
+      if (listener.accept(*client) != sf::Socket::Done)
+      {
+         std::cout << "Got bad client!";
+         std::cout.flush();
+         //some kind of error
+         delete client;
+          continue;
+      }
+      std::cout << "Got good client!";
+      std::cout.flush();
+      sf::Packet dataPack;
+      client->receive(dataPack);
+      std::cout << "Received Data!";
+      std::cout.flush();
       //zmq::message_t message;
       //socket.recv (&message);
-      std::string messageString = "hi";//std::string(static_cast<char*>(message.data())) + '\0';
+      std::string messageString = std::string(static_cast<const char*>(dataPack.getData())) + '\0';
       std::cout << "received data!"<<std::endl;
       std::cout << messageString << std::endl;
       
@@ -141,6 +171,7 @@ int main()
       }
       //Wait for new connection
       //spin new connection in its own thread
+      delete client;
    }
    return 0;
 }

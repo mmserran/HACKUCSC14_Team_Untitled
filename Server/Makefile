@@ -16,6 +16,8 @@ compile: ./main.o
 %.o: %.cpp
 	g++ -c -std=c++11 $< -I$(incpath)
 
+
+#Old target
 compile2:
 	g++ -Wall -Wextra -std=c++11 -o Server main.cpp -lzmq
 
