@@ -1,6 +1,30 @@
 #include <iostream>
 #include "zmq.hpp"
 #include <cassert>
+#include <unordered_map>
+
+
+
+const int MAX_TIME = 30;//minutes
+const int MAX_PINGS = 10;//minutes
+class fourlet{
+   public:
+      double lati;
+      double longi;
+      long uptime;
+      char dir;
+   fourlet(double a, double b, long c, char d);
+};
+
+fourlet::fourlet(double a, double b, long c, char d):lati(a), longi(b), uptime(c), dir(d){};
+std::unordered_map<std::string, fourlet> queues;
+
+
+void addToDatabase(double lati, double longi, std::string route, long uptime, char direction)
+{
+   
+}
+
 int main()
 {
    std::cout << "hi" << std::endl;
@@ -35,18 +59,20 @@ int main()
             std::cout << "Part " << i << ": "<<data[i] << std::endl;
          }
       }
-      //double lati, longi;
-      //std::string route;
-     //long upTime;
-      //char direction;
+      double lati = std::stod(data[0]);
+      double longi = std::stod(data[1]);
+      std::string route = data[2];
+      long upTime = std::stol(data[3]);
+      char direction = data[4][0];
       
-      //data[0] >> lati;
-      //data[1] >> longi;
-      //route = data[2];
-      //data[3] >> upTime;
-      //data[4] >> direction;
+      std::cout << "Lati"     << ": " << lati      << std::endl;
+      std::cout << "Longi "   << ": " << longi     << std::endl;
+      std::cout << "Route"    << ": " << route     << std::endl;
+      std::cout << "Time"     << ": " << upTime    << std::endl;
+      std::cout << "Direction"<< ": " << direction << std::endl;
+
       
-      //someHandlerFunction(lati, longi, route, upTime, direction); //should thread and free this to make connections
+      addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
       
       zmq::message_t reply (50);
       memcpy ((void *) reply.data (), "HWORLD DUDE", 40);
