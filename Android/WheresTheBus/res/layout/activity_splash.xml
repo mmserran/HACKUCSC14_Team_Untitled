@@ -16,6 +16,12 @@
         android:orientation="horizontal"
         android:layout_weight="2" />
     
+    <TextView
+        android:id="@+id/uploadTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="4"
+        android:text="Where's the Bus?" />
     
     <ImageView
         android:id="@+id/wtbLogo"
@@ -35,7 +41,6 @@
             android:id="@+id/uploadBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-	        android:onClick="onClick"
             android:layout_weight="2"
             android:text="Upload Coords" />
         
@@ -47,13 +52,6 @@
             android:text="View Map" />
         
     </LinearLayout>
-    
-	<TextView
-            android:id="@+id/testArea"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Large Text"
-            android:textAppearance="?android:attr/textAppearanceLarge" />
     
     <LinearLayout
 		android:id="@+id/botGap"
