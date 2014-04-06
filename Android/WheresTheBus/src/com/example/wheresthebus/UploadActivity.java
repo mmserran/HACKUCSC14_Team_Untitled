@@ -1,5 +1,14 @@
 package com.example.wheresthebus;
 
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.Calendar;
+
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Color;
@@ -25,34 +34,66 @@ public class UploadActivity extends Activity {
 	
 	private Spinner spinner1, spinner2;
 	String [] routesList, directionList;
+
+	private Socket socket;
+
+	private static final int SERVERPORT = 5867;
+	private static final String SERVER_IP = "54.186.243.187";
+	
+	/*
+	 * Source: http://examples.javacodegeeks.com/android/core/socket-core/android-socket-example/
+	 */
+	class ClientThread implements Runnable {
+
+		@Override
+		public void run() {
+
+			try {
+				InetAddress serverAddr = InetAddress.getByName(SERVER_IP);
+
+				socket = new Socket(serverAddr, SERVERPORT);
+				Log.e("Connected", "Connected");
+				
+			} catch (UnknownHostException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+		}
+
+	}
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_upload);
 
+		new Thread(new ClientThread()).start();
+		
 		TextView title = (TextView) findViewById(R.id.uploadTitle);
-		title.setTextSize(24);
+		title.setGravity(Gravity.CENTER);
+		title.setTextSize(36);
 		
+		// Create String arrays
 		routesList = getResources().getStringArray(R.array.routes);
-		
-		ArrayAdapter<String> dataAdapter1 = new ArrayAdapter<String>
-        (this, android.R.layout.simple_spinner_item, routesList);
-		
 		directionList = getResources().getStringArray(R.array.directions);
 		
+		// Create an ArrayAdapter using default spinner layout
+		ArrayAdapter<String> dataAdapter1 = new ArrayAdapter<String>
+        (this, android.R.layout.simple_spinner_item, routesList);
 		ArrayAdapter<String> dataAdapter2 = new ArrayAdapter<String>
         (this, android.R.layout.simple_spinner_item, directionList);
-         
+        
+		// Specify the layout to use when the list of choices appears
 		dataAdapter1.setDropDownViewResource
 		        (android.R.layout.simple_spinner_dropdown_item);
-
 		dataAdapter2.setDropDownViewResource
 		        (android.R.layout.simple_spinner_dropdown_item);
 		
+		// Apply the adapters to the spinners
         spinner1 = (Spinner) findViewById(R.id.busRouteSpinner);
 		spinner1.setAdapter(dataAdapter1);
-		
         spinner2 = (Spinner) findViewById(R.id.directionSpinner);
 		spinner2.setAdapter(dataAdapter2);
 		
@@ -62,36 +103,63 @@ public class UploadActivity extends Activity {
 		// Button click Listener 
 		addListenerOnButton();
 		
-		// Initiate the Map Button
+		// Initiate the Upload Button
 		final Button uploadBtn = (Button) findViewById(R.id.uploadBtn);
 		uploadBtn.setTextColor(Color.WHITE);
-		uploadBtn.setBackgroundResource(R.drawable.green_btn_statelist);
+		uploadBtn.setBackgroundResource(R.drawable.orange_btn_statelist);
 		uploadBtn.setGravity(Gravity.CENTER);
 		//uploadBtn.setTextSize(24);
 		uploadBtn.setOnClickListener(new View.OnClickListener() {
 			public void onClick(View v) {
 				
-				// Open Map window on click
+				// Perform action on click
 				Location coords = getLastBestLocation();
 				double latty = coords.getLatitude();
 				double longy = coords.getLongitude();
-				String testMsg = Double.toString(latty) + "*" + Double.toString(longy);
-				uploadBtn.setText(testMsg);
+				//String testMsg = Double.toString(latty) + "*" + Double.toString(longy);
+				
+				Spinner busSpinner = (Spinner)findViewById(R.id.busRouteSpinner);
+				Spinner dirSpinner = (Spinner)findViewById(R.id.directionSpinner);
+				
+				String route = busSpinner.getSelectedItem().toString();
+				String direction = dirSpinner.getSelectedItem().toString();
+						
+				Calendar c = Calendar.getInstance(); 
+				int time = c.get(Calendar.SECOND);
+				
+				String outStr = createOutString(latty, longy, route, time, direction);
+				uploadBtn.setText(outStr);
+				
+				// Send data to server
+				try {
+					PrintWriter out = new PrintWriter(new BufferedWriter(
+							new OutputStreamWriter(socket.getOutputStream())),
+							true);
+					out.println(outStr);
+				} catch (UnknownHostException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
 				
 			}
 		});
 		
 	}
 
-	// Add spinner data
-    
+	/* Add spinner data
+	 * Source: http://androidexample.com/Spinner_Basics_-_Android_Example/index.php?view=article_discription&aid=82&aaid=105
+	 */
     public void addListenerOnSpinnerItemSelection(){
          
                 spinner1.setOnItemSelectedListener(new CustomOnItemSelectedListener());
     }
      
-    //get the selected dropdown list value
-     
+    /* get the selected dropdown list value
+     * Source: http://androidexample.com/Spinner_Basics_-_Android_Example/index.php?view=article_discription&aid=82&aaid=105
+     */
     public void addListenerOnButton() {
  
         spinner1 = (Spinner) findViewById(R.id.busRouteSpinner);
@@ -235,6 +303,19 @@ public class UploadActivity extends Activity {
 	 
 	    }
 	 
+	}
+	
+	/** Returns an output string acceptd by our C server
+	 *
+	 */
+	private String createOutString(double latty, double longy, 
+									String route, double time, String direction) {
+		
+		// "SDOUBLE*DOUBLE*STRING*DOUBLE*STRING
+		String outStr = "S" + Double.toString(latty) + "*" + Double.toString(longy)
+						+ "*" + Double.toString(time) + "*" + direction + "*";
+		
+		return outStr;
 	}
 }
 

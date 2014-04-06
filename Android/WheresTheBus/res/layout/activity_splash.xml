@@ -17,7 +17,7 @@
         android:layout_weight="2" />
     
     <TextView
-        android:id="@+id/uploadTitle"
+        android:id="@+id/splashTitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="4"
@@ -28,7 +28,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_weight="4"
-        android:src="@drawable/ic_launcher" />
+        android:src="@drawable/ic_wtb_logo" />
     
     <LinearLayout
 		android:id="@+id/btnList"
