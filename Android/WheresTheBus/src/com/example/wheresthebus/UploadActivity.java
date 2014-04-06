@@ -329,7 +329,7 @@ public class UploadActivity extends Activity {
 						+ direction + "*";
 		
 		//outStr = 'S' + Double.toString(latty) + "*" + Double.toString(longy);
-		
+		//outStr
 		return outStr;
 	}
 }
