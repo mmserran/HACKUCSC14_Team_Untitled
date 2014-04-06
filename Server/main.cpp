@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <list>
+#include <cstring>
 #include "SFML/Network.hpp"
 
 
@@ -15,23 +16,52 @@ sf::Mutex mutex;
 
 
 
-class fourlet{
+class fivelet{
    public:
    double lati;
    double longi;
+   std::string* route;
    long uptime;
    char dir;
-   fourlet(double a, double b, long c, char d);
+   fivelet(double a, double b, std::string c, long d, char e);
+   ~fivelet();
 };
 
-fourlet::fourlet(double a, double b, long c, char d):lati(a), longi(b), uptime(c), dir(d){};
-std::unordered_map<std::string, std::list<fourlet>> queues;
+fivelet::fivelet(double a, double b, std::string c, long d, char e)
+:lati(a), longi(b),uptime(d), dir(e)
+{
+   std::cout << "Making new Fivelet!" << std::endl;
+   std::cout << a << std::endl;
+   std::cout << b << std::endl;
+   std::cout << c << std::endl;
+   std::cout << d << std::endl;
+   std::cout << e << std::endl;
+   std::cout.flush();
+   route = new std::string(c.c_str());
+};
+
+fivelet::~fivelet()
+{
+   //empty deconstructor
+   
+   std::cout << "Deleting old Fivelet!" << std::endl;
+   std::cout << lati   << std::endl;
+   std::cout << longi  << std::endl;
+   std::cout << *route << std::endl;
+   std::cout << uptime << std::endl;
+   std::cout << dir    << std::endl;
+   std::cout.flush();
+   delete route;
+};
+
+
+std::unordered_map<std::string, std::vector<fivelet*>> queues(0);
 
 
 void addToDatabase(double lati, double longi, std::string route, long uptime, char direction)
 {
    mutex.lock();
-   fourlet node(lati, longi, uptime, direction);
+   fivelet* node = new fivelet(lati, longi, route, uptime, direction);
    queues[route].push_back(node);
    while((queues[route].size() > MAX_PINGS) /* || time.now() > queues[route].first().uptime + MAX_TIME */)
    {
@@ -40,7 +70,7 @@ void addToDatabase(double lati, double longi, std::string route, long uptime, ch
    mutex.unlock();
 }
 
-std::vector<fourlet> retrieveFromDatabase(std::string route)
+std::vector<fivelet*> retrieveFromDatabase(std::string route)
 {
    mutex.lock();
    if(!(route.compare("all")))
@@ -59,11 +89,13 @@ std::vector<fourlet> retrieveFromDatabase(std::string route)
       }
       if(!queues[route].empty())
       {
-         std::vector<fourlet> returnVector;
+         std::vector<fivelet*> returnVector;
          auto q_iter = queues[route].begin();
+         
          for(auto q_iter: queues[route])
          {
-            returnVector.push_back(*q_iter);
+            std::cout << "Adding item to return vector" << std::endl;
+            returnVector.push_back(q_iter);
          }
          return returnVector;
       }
@@ -75,115 +107,124 @@ std::vector<fourlet> retrieveFromDatabase(std::string route)
 
 void clientCommThread(sf::TcpSocket* newClient)
 {
+   addToDatabase(1, 2, "don'tcrash", 0, 'D');
    std::cout << "SPAWNING THREAD!";
    std::cout.flush();
    std::size_t maxData = sizeof(char)*100;
-void* dataA = malloc(maxData);
-std::size_t received;
-
-
-
-while(newClient->receive(dataA, maxData, received) != sf::Socket::Disconnected)
-{
-   std::cout << "Received Data! " << received << " # of bytes!" << std::endl;
-   std::cout.flush();
-   //zmq::message_t message;
-   //socket.recv (&message);
-   std::string messageString = std::string(static_cast<const char*>(dataA)) + '\0';
-   std::cout << "received data!"<<std::endl;
-   std::cout << messageString << std::endl;
+   void* dataA = malloc(maxData);
+   std::size_t received;
    
-   if(messageString[0] == 'G' || messageString[0] == 'S')
+   
+   
+   while(newClient->receive(dataA, maxData, received) != sf::Socket::Disconnected)
    {
-      bool requestingPings = (messageString[0] == 'G');
+      std::cout << "Received Data! " << received << " # of bytes!" << std::endl;
+      std::cout.flush();
       
-      std::string rest = messageString.substr(1);
-      std::string data[5];
+      std::string messageString = std::string(static_cast<const char*>(dataA)) + '\0';
+      std::cout << "Accepted String: " << messageString << std::endl;
       
       bool goodString = true;
-      for(int i = 0; i < 5; i++)
-      {
-         size_t delimLocation = rest.find('*');
-         if(delimLocation == std::string::npos) //no delim found
-         {
-            goodString = false;
-         }
-         else
-         {
-            data[i] = rest.substr(0, delimLocation); //sets data[i] from begin
-            // to next '*' character
-            rest = rest.substr(delimLocation+1); //sets rest to everything after
-            //the first '*'
-            std::cout << "Part " << i << ": "<<data[i] << std::endl;
-         }
-      }
       
-      double lati;
-      double longi;
-      std::string route;
-      long upTime;
-      char direction;
-      
-      if(goodString)
+      if(messageString[0] == 'G' || messageString[0] == 'S')
       {
-         try
-         {
-            lati = std::stod(data[0]);
-            longi = std::stod(data[1]);
-            route = data[2];
-            upTime = std::stol(data[3]);
-            direction = data[4][0];
-         }
-         catch(...)
-         {
-            std::cout << "Improperly formatted data. Throwing away string!"<<std::endl;
-            goodString = false;
-         }
+         bool requestingPings = (messageString[0] == 'G');
          
-         //std::cout << "Lati"     << ": " << lati      << std::endl;
-         //std::cout << "Longi "   << ": " << longi     << std::endl;
-         //std::cout << "Route"    << ": " << route     << std::endl;
-         //std::cout << "Time"     << ": " << upTime    << std::endl;
-         //std::cout << "Direction"<< ": " << direction << std::endl;
-      }
-      if(goodString)
-      {
+         std::string rest = messageString.substr(1);
          if(!requestingPings)
          {
-            //addToDatabase(lati, longi, route, upTime, direction); //should thread and free this to make connections
+            std::string data[5];
+            for(int i = 0; i < 5; i++)
+            {
+               size_t delimLocation = rest.find('*');
+               if(delimLocation == std::string::npos) //no delim found
+               {
+                  goodString = false;
+               }
+               else
+               {
+                  data[i] = rest.substr(0, delimLocation); //sets data[i] from begin
+                  // to next '*' character
+                  rest = rest.substr(delimLocation+1); //sets rest to everything after
+                  //the first '*'
+                  std::cout << "Part " << i << ": "<<data[i] << std::endl;
+               }
+            }
             
+            double lati;
+            double longi;
+            std::string route;
+            long upTime;
+            char direction;
             
-            std::cout << "Sending GOOD REPLY" << std::endl;
-            std::cout.flush();
-            newClient->send (receiMsg.c_str(), receiMsg.size());
+            if(goodString)
+            {
+               try
+               {
+                  lati = std::stod(data[0]);
+                  longi = std::stod(data[1]);
+                  route = data[2];
+                  upTime = std::stol(data[3]);
+                  direction = data[4][0];
+               }
+               catch(...)
+               {
+                  std::cout << "Improperly formatted data. Throwing away string!"<<std::endl;
+                  goodString = false;
+               }
+               
+               //std::cout << "Lati"     << ": " << lati      << std::endl;
+               //std::cout << "Longi "   << ": " << longi     << std::endl;
+               //std::cout << "Route"    << ": " << route     << std::endl;
+               //std::cout << "Time"     << ": " << upTime    << std::endl;
+               //std::cout << "Direction"<< ": " << direction << std::endl;
+            }
+            if(goodString)
+            {
+               
+               addToDatabase(lati, longi, route, upTime, direction);
+               
+               
+               std::cout << "Sending GOOD REPLY" << std::endl;
+               std::cout.flush();
+               newClient->send (receiMsg.c_str(), receiMsg.size());
+            }
+            if(!goodString)
+            {
+               //Bad in string
+               std::cout << "Error_Reply2" << std::endl;
+               newClient->send (errorMsg.c_str(), errorMsg.size());
+            }
          }
-         else
+         else //"REQUESTING PINGS
          {
+            std::cout << "Client is requesting pings." <<std::endl;
+            std::vector<fivelet*> pingData = retrieveFromDatabase(rest);
             //send many pings back
             std::cout << "Sending GOOD REPLY" << std::endl;
             std::cout.flush();
             newClient->send (receiMsg.c_str(), receiMsg.size());
+            std::cout << "Reply sent successfully." << std::endl;
          }
       }
-      if(!goodString)
+      else //Not G or S
       {
          //Bad in string
-         std::cout << "Error_Reply2" << std::endl;
+         std::cout << "Error_Reply1: String:" << messageString << std::endl;
+         std::cout.flush();
          newClient->send (errorMsg.c_str(), errorMsg.size());
       }
+      //Wait for new connection
+      //spin new connection in its own thread
+      std::cout << "Trying to loop." << std::endl;
+      std::cout.flush();
    }
-   else //Not G or S
-   {
-      //Bad in string
-      std::cout << "Error_Reply1: String:" << messageString << std::endl;
-      newClient->send (errorMsg.c_str(), errorMsg.size());
-   }
-   //Wait for new connection
-   //spin new connection in its own thread
-}
-delete newClient;
-std::cout << "EXITING THREAD!";
-std::cout.flush();
+   std::cout << "Attempting to delete new client!"<<std::endl;
+   newClient->disconnect();
+   std::cout.flush();
+   //delete newClient;
+   std::cout << "EXITING THREAD!";
+   std::cout.flush();
 }
 
 
